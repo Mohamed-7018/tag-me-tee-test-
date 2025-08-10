@@ -25,11 +25,6 @@
             max-width: 600px;
         }
         
-        h1 {
-            color: #333;
-            margin-bottom: 1.5rem;
-        }
-        
         .id-display {
             font-size: 3rem;
             font-weight: bold;
@@ -49,95 +44,56 @@
             font-size: 1rem;
             border-radius: 4px;
             cursor: pointer;
-            transition: background-color 0.3s;
             margin-top: 1rem;
         }
-        
-        .print-button:hover {
-            background-color: #2980b9;
-        }
-        
-        #qrCodeContainer {
-            margin: 1.5rem 0;
-        }
-        
-        @media print {
-            body {
-                background-color: white;
-                height: auto;
-            }
-            
-            .print-container {
-                box-shadow: none;
-                width: 100%;
-                max-width: 100%;
-                padding: 0;
-            }
-            
-            .print-button {
-                display: none;
-            }
-        }
     </style>
-    <!-- QR Code Generator Library -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.min.js"></script>
 </head>
 <body>
     <div class="print-container">
         <h1>Your Unique ID</h1>
         <div class="id-display" id="idDisplay">Loading ID...</div>
-        <div id="qrCodeContainer"></div>
         <button class="print-button" onclick="window.print()">Print ID</button>
     </div>
 
     <script>
-        // Get ID from URL parameter (?id=XXXX)
+        // 1. FIRST TRY: Get ID from URL hash (#1985)
+        // 2. SECOND TRY: Get ID from query parameter (?id=1985)
+        // 3. FINAL FALLBACK: Show error
         function getIdFromUrl() {
-            const urlParams = new URLSearchParams(window.location.search);
-            const id = urlParams.get('id');
+            // Try hash first (works better on GitHub Pages)
+            if (window.location.hash) {
+                return window.location.hash.substring(1); // Remove #
+            }
+            
+            // Try query parameter
+            const params = new URLSearchParams(window.location.search);
+            if (params.has('id')) {
+                return params.get('id');
+            }
+            
+            return null;
+        }
+
+        function displayId() {
+            const id = getIdFromUrl();
+            const display = document.getElementById('idDisplay');
             
             if (!id) {
-                return {
-                    value: 'NO-ID-FOUND',
-                    isValid: false
-                };
-            }
-            return {
-                value: id,
-                isValid: true
-            };
-        }
-
-        // Generate QR Code
-        function generateQRCode(id) {
-            const qr = qrcode(0, 'L');
-            qr.addData(id);
-            qr.make();
-            document.getElementById('qrCodeContainer').innerHTML = qr.createImgTag(4, 8);
-        }
-
-        // Display ID and handle errors
-        function displayId() {
-            const { value: id, isValid } = getIdFromUrl();
-            const idDisplay = document.getElementById('idDisplay');
-            
-            if (!isValid) {
-                idDisplay.textContent = 'Invalid ID';
-                idDisplay.style.color = 'red';
+                display.textContent = 'No ID Found in URL';
+                display.style.color = 'red';
                 return;
             }
             
-            idDisplay.textContent = id;
-            generateQRCode(id);
+            display.textContent = id;
             
-            // Auto-print if URL contains ?print
-            if (window.location.search.includes('print')) {
+            // Auto-print if URL has ?print
+            if (new URLSearchParams(window.location.search).has('print')) {
                 window.print();
             }
         }
 
         // Initialize when page loads
-        window.onload = displayId;
+        window.addEventListener('load', displayId);
     </script>
 </body>
 </html>
