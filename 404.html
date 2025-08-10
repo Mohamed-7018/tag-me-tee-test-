@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script>
+        // Redirect all 404s to index.html with path as parameter
+        const path = window.location.pathname;
+        const id = path.split('/').filter(Boolean).pop();
+        window.location.href = `/${id ? '?id=' + id : ''}`;
+    </script>
+</head>
+<body>
+    Redirecting...
+</body>
+</html>
