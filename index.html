@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ID Printer</title>
     <style>
+        /* Keep your existing styles */
         body {
             font-family: 'Arial', sans-serif;
             display: flex;
@@ -14,7 +15,6 @@
             margin: 0;
             background-color: #f5f5f5;
         }
-        
         .print-container {
             background-color: white;
             padding: 2rem;
@@ -24,7 +24,6 @@
             width: 80%;
             max-width: 600px;
         }
-        
         .id-display {
             font-size: 3rem;
             font-weight: bold;
@@ -35,7 +34,6 @@
             border-radius: 4px;
             background-color: #f8f9fa;
         }
-        
         .print-button {
             background-color: #3498db;
             color: white;
@@ -56,26 +54,25 @@
     </div>
 
     <script>
-        // 1. FIRST TRY: Get ID from URL hash (#1985)
-        // 2. SECOND TRY: Get ID from query parameter (?id=1985)
-        // 3. FINAL FALLBACK: Show error
-        function getIdFromUrl() {
-            // Try hash first (works better on GitHub Pages)
-            if (window.location.hash) {
-                return window.location.hash.substring(1); // Remove #
-            }
-            
-            // Try query parameter
+        function getId() {
+            // 1. Check for ID in query parameter (?id=) from 404 redirect
             const params = new URLSearchParams(window.location.search);
             if (params.has('id')) {
                 return params.get('id');
+            }
+            
+            // 2. Check for direct path access (if GitHub config changes)
+            const path = window.location.pathname.split('/');
+            const potentialId = path.filter(part => part && part !== 'tag-me-tee-test-').pop();
+            if (potentialId) {
+                return potentialId;
             }
             
             return null;
         }
 
         function displayId() {
-            const id = getIdFromUrl();
+            const id = getId();
             const display = document.getElementById('idDisplay');
             
             if (!id) {
@@ -92,7 +89,6 @@
             }
         }
 
-        // Initialize when page loads
         window.addEventListener('load', displayId);
     </script>
 </body>
