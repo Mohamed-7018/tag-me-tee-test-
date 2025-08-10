@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ID Printer</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f5f5f5;
+        }
+        
+        .print-container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            width: 80%;
+            max-width: 600px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 1.5rem;
+        }
+        
+        .id-display {
+            font-size: 3rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin: 2rem 0;
+            padding: 1rem;
+            border: 2px dashed #3498db;
+            border-radius: 4px;
+            background-color: #f8f9fa;
+        }
+        
+        .print-button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .print-button:hover {
+            background-color: #2980b9;
+        }
+        
+        @media print {
+            body {
+                background-color: white;
+                height: auto;
+            }
+            
+            .print-container {
+                box-shadow: none;
+                width: 100%;
+                max-width: 100%;
+                padding: 0;
+            }
+            
+            .print-button {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="print-container">
+        <h1>Your Unique ID</h1>
+        <div class="id-display" id="idDisplay">Loading ID...</div>
+        <button class="print-button" onclick="window.print()">Print ID</button>
+    </div>
+
+    <script>
+        // Extract ID from URL
+        function getIdFromUrl() {
+            const path = window.location.pathname;
+            const parts = path.split('/');
+            // Get the last non-empty part of the path
+            const id = parts.filter(part => part.trim() !== '').pop();
+            return id || 'NO-ID-FOUND';
+        }
+
+        // Display the ID and make it printable
+        function displayId() {
+            const id = getIdFromUrl();
+            const idDisplay = document.getElementById('idDisplay');
+            idDisplay.textContent = id;
+            
+            // Automatically print if URL contains ?print
+            if (window.location.search.includes('print')) {
+                window.print();
+            }
+        }
+
+        // Initialize when page loads
+        window.onload = displayId;
+    </script>
+</body>
+</html>
