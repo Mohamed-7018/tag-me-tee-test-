@@ -246,6 +246,14 @@
         .hidden {
             display: none;
         }
+        
+        .redirect-error {
+            background-color: #f8d7da;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -258,6 +266,12 @@
         
         <div id="redirect-info" class="redirect-info hidden">
             <p>ID found! Redirecting to your content...</p>
+        </div>
+        
+        <div id="redirect-error" class="redirect-error hidden">
+            <h3>Redirect Error</h3>
+            <p>This QR code is not properly configured with a valid URL.</p>
+            <p>Please contact the QR code owner to fix this issue.</p>
         </div>
         
         <div id="message" class="message hidden"></div>
@@ -311,7 +325,7 @@
 
     <script>
         // Firebase configuration - replace with your own config
-       const firebaseConfig = {
+         const firebaseConfig = {
             apiKey: "AIzaSyDGXREj9jTHoId7A9I6P472OuLtqYgxV9g",
   authDomain: "tag-me-tee.firebaseapp.com",
   projectId: "tag-me-tee",
@@ -320,7 +334,6 @@
   appId: "1:892888185977:web:292e1eb7515e8d81f768a8",
   measurementId: "G-EGD6QJYMB0"
         };
-        
         
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
@@ -339,6 +352,7 @@
         const visitCountSpan = document.getElementById('visit-count');
         const qrConfigSection = document.getElementById('qr-config');
         const signupAnywayBtn = document.getElementById('signup-anyway');
+        const redirectErrorSection = document.getElementById('redirect-error');
         
         // Get ID from URL
         const urlParams = new URLSearchParams(window.location.search);
@@ -379,7 +393,7 @@
         // Show/hide sections
         function showSection(section) {
             // Hide all sections first
-            [signupSection, redirectInfo, statsSection, qrConfigSection].forEach(sec => {
+            [signupSection, redirectInfo, statsSection, qrConfigSection, redirectErrorSection].forEach(sec => {
                 sec.classList.add('hidden');
             });
             
@@ -431,12 +445,25 @@
             }
         }
         
+        // Validate URL format
+        function isValidUrl(url) {
+            if (!url) return false;
+            if (typeof url !== 'string') return false;
+            
+            try {
+                const parsedUrl = new URL(url);
+                return parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:';
+            } catch (e) {
+                return false;
+            }
+        }
+        
         // Check if ID exists in database and redirect if found
         function checkIdAndRedirect() {
             if (!id) {
                 setLoading(false);
                 showSection(signupSection);
-                showMessage('No ID found in URL. Please sign up.', 'info');
+                showMessage('No ID found in URL. Please sign up to get your QR Code.', 'info');
                 return;
             }
             
@@ -456,7 +483,20 @@
                             return;
                         }
                         
-                        const link = typeof linkData === 'string' ? linkData : linkData.url;
+                        // Get the URL - handle both string and object formats
+                        let linkUrl;
+                        if (typeof linkData === 'string') {
+                            linkUrl = linkData;
+                        } else if (typeof linkData === 'object' && linkData.url) {
+                            linkUrl = linkData.url;
+                        }
+                        
+                        // Validate the URL before redirecting
+                        if (!isValidUrl(linkUrl)) {
+                            showSection(redirectErrorSection);
+                            setLoading(false);
+                            return;
+                        }
                         
                         // Update visit count
                         updateVisitCount(id);
@@ -471,7 +511,7 @@
                         
                         // Redirect after a short delay
                         setTimeout(() => {
-                            window.location.href = link;
+                            window.location.href = linkUrl;
                         }, 3000);
                     } else {
                         // ID not found, show signup form
