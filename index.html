@@ -30,7 +30,7 @@
             border-radius: 10px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
             width: 100%;
-            max-width: 450px;
+            max-width: 500px;
             padding: 30px;
             position: relative;
             overflow: hidden;
@@ -101,6 +101,14 @@
             background-color: #5a7df9;
         }
         
+        .btn-secondary {
+            background-color: #a777e3;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #9666d3;
+        }
+        
         .login-link {
             text-align: center;
             margin-top: 20px;
@@ -122,7 +130,6 @@
             border-radius: 5px;
             margin-bottom: 20px;
             text-align: center;
-            display: none;
         }
         
         .success {
@@ -141,6 +148,12 @@
             background-color: #cce5ff;
             color: #004085;
             border: 1px solid #b8daff;
+        }
+        
+        .warning {
+            background-color: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeeba;
         }
         
         .password-container {
@@ -166,7 +179,6 @@
             height: 40px;
             animation: spin 1s linear infinite;
             margin: 20px auto;
-            display: none;
         }
         
         @keyframes spin {
@@ -180,7 +192,6 @@
             border-radius: 5px;
             margin-bottom: 20px;
             text-align: center;
-            display: none;
         }
         
         .stats {
@@ -189,7 +200,6 @@
             border-radius: 5px;
             margin-top: 20px;
             text-align: center;
-            display: none;
         }
         
         .stats h3 {
@@ -202,6 +212,40 @@
             font-weight: bold;
             color: #6e8efb;
         }
+        
+        .qr-config {
+            text-align: center;
+            padding: 20px;
+            background-color: #f9f9f9;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+        
+        .qr-config h2 {
+            color: #333;
+            margin-bottom: 15px;
+        }
+        
+        .qr-config p {
+            color: #666;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+        
+        .app-badge {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .app-badge img {
+            height: 45px;
+        }
+        
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -212,17 +256,28 @@
             <p>Sign up or get redirected to your content</p>
         </div>
         
-        <div id="redirect-info" class="redirect-info">
+        <div id="redirect-info" class="redirect-info hidden">
             <p>ID found! Redirecting to your content...</p>
         </div>
         
-        <div id="message" class="message"></div>
+        <div id="message" class="message hidden"></div>
         
-        <div id="loader" class="loader"></div>
+        <div id="loader" class="loader hidden"></div>
         
-        <div id="stats" class="stats">
+        <div id="stats" class="stats hidden">
             <h3>Link Statistics</h3>
             <p>Total Visits: <span id="visit-count">0</span></p>
+        </div>
+        
+        <div id="qr-config" class="qr-config hidden">
+            <h2>QR Code Not Configured</h2>
+            <p>This QR code is already in use but hasn't been configured yet.</p>
+            <p>Please open the TagMeTee mobile app to edit your QR code settings and set a destination URL.</p>
+            <div class="app-badge">
+                <img src="https://developer.apple.com/app-store/marketing/guidelines/images/badge-download-on-the-app-store.svg" alt="Download on the App Store">
+                <img src="https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png" alt="Get it on Google Play" style="height: 45px;">
+            </div>
+            <button id="signup-anyway" class="btn btn-secondary">Sign Up Anyway</button>
         </div>
         
         <div id="signup-section">
@@ -256,7 +311,7 @@
 
     <script>
         // Firebase configuration - replace with your own config
- const firebaseConfig = {
+       const firebaseConfig = {
             apiKey: "AIzaSyDGXREj9jTHoId7A9I6P472OuLtqYgxV9g",
   authDomain: "tag-me-tee.firebaseapp.com",
   projectId: "tag-me-tee",
@@ -265,6 +320,7 @@
   appId: "1:892888185977:web:292e1eb7515e8d81f768a8",
   measurementId: "G-EGD6QJYMB0"
         };
+        
         
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
@@ -281,6 +337,8 @@
         const redirectInfo = document.getElementById('redirect-info');
         const statsSection = document.getElementById('stats');
         const visitCountSpan = document.getElementById('visit-count');
+        const qrConfigSection = document.getElementById('qr-config');
+        const signupAnywayBtn = document.getElementById('signup-anyway');
         
         // Get ID from URL
         const urlParams = new URLSearchParams(window.location.search);
@@ -301,17 +359,54 @@
         function showMessage(message, type) {
             messageDiv.textContent = message;
             messageDiv.className = 'message ' + type;
-            messageDiv.style.display = 'block';
+            messageDiv.classList.remove('hidden');
             
             // Hide message after 5 seconds
             setTimeout(() => {
-                messageDiv.style.display = 'none';
+                messageDiv.classList.add('hidden');
             }, 5000);
         }
         
         // Show/hide loader
         function setLoading(loading) {
-            loader.style.display = loading ? 'block' : 'none';
+            if (loading) {
+                loader.classList.remove('hidden');
+            } else {
+                loader.classList.add('hidden');
+            }
+        }
+        
+        // Show/hide sections
+        function showSection(section) {
+            // Hide all sections first
+            [signupSection, redirectInfo, statsSection, qrConfigSection].forEach(sec => {
+                sec.classList.add('hidden');
+            });
+            
+            // Show the requested section
+            if (section) {
+                section.classList.remove('hidden');
+            }
+        }
+        
+        // Generate a unique ID for new users
+        function generateNewId() {
+            // Generate a random 6-character alphanumeric ID
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+            let newId = '';
+            for (let i = 0; i < 6; i++) {
+                newId += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return newId;
+        }
+        
+        // Create a new link entry with null URL and visitCount=0
+        function createNewLinkEntry(newId) {
+            const linkRef = database.ref('links/' + newId);
+            return linkRef.set({
+                url: null,
+                visitCount: 0
+            });
         }
         
         // Update visit count for a link
@@ -328,7 +423,7 @@
             });
             
             // Also update the stats display if we're showing it
-            if (statsSection.style.display === 'block') {
+            if (!statsSection.classList.contains('hidden')) {
                 visitCountRef.once('value').then((snapshot) => {
                     const count = snapshot.val() || 0;
                     visitCountSpan.textContent = count;
@@ -340,14 +435,12 @@
         function checkIdAndRedirect() {
             if (!id) {
                 setLoading(false);
-                statsSection.style.display = 'block';
-                visitCountSpan.textContent = 'N/A';
+                showSection(signupSection);
+                showMessage('No ID found in URL. Please sign up.', 'info');
                 return;
             }
             
             setLoading(true);
-            signupSection.style.display = 'none';
-            statsSection.style.display = 'block';
             
             // Check if ID exists in the database
             const ref = database.ref('links/' + id);
@@ -355,13 +448,22 @@
                 .then((snapshot) => {
                     if (snapshot.exists()) {
                         const linkData = snapshot.val();
+                        
+                        // Check if URL is null (QR code not configured)
+                        if (linkData.url === null) {
+                            showSection(qrConfigSection);
+                            setLoading(false);
+                            return;
+                        }
+                        
                         const link = typeof linkData === 'string' ? linkData : linkData.url;
                         
                         // Update visit count
                         updateVisitCount(id);
                         
-                        // Show redirect message
-                        redirectInfo.style.display = 'block';
+                        // Show redirect message and stats
+                        showSection(redirectInfo);
+                        statsSection.classList.remove('hidden');
                         
                         // Show visit count stats
                         const visitCount = typeof linkData === 'object' && linkData.visitCount ? linkData.visitCount : 0;
@@ -373,17 +475,15 @@
                         }, 3000);
                     } else {
                         // ID not found, show signup form
-                        redirectInfo.style.display = 'none';
-                        signupSection.style.display = 'block';
-                        statsSection.style.display = 'none';
+                        showSection(signupSection);
                         setLoading(false);
+                        showMessage('ID not found. Please sign up to claim it.', 'info');
                     }
                 })
                 .catch((error) => {
                     console.error('Error checking ID:', error);
                     showMessage('Error checking ID. Please try again.', 'error');
-                    signupSection.style.display = 'block';
-                    statsSection.style.display = 'none';
+                    showSection(signupSection);
                     setLoading(false);
                 });
         }
@@ -412,16 +512,26 @@
                     return user.updateProfile({
                         displayName: name
                     }).then(() => {
-                        showMessage('Account created successfully!', 'success');
+                        // Generate a new ID if one wasn't provided in the URL
+                        const newId = id || generateNewId();
                         
-                        // If there was an ID in the URL, save it to the user's account
-                        if (id) {
-                            const userRef = database.ref('users/' + user.uid + '/referralId');
-                            return userRef.set(id).then(() => {
-                                // You can redirect to another page or do something else here
-                                // For example: window.location.href = 'dashboard.html';
+                        // Create a new link entry with null URL
+                        return createNewLinkEntry(newId).then(() => {
+                            // Save the ID to the user's account
+                            const userRef = database.ref('users/' + user.uid);
+                            return userRef.set({
+                                name: name,
+                                email: email,
+                                linkId: newId
+                            }).then(() => {
+                                showMessage(`Account created successfully! Your QR Code ID is: ${newId}`, 'success');
+                                
+                                // Show the QR config section if this was a new ID
+                                if (!id) {
+                                    showSection(qrConfigSection);
+                                }
                             });
-                        }
+                        });
                     });
                 })
                 .catch((error) => {
@@ -447,6 +557,11 @@
                 });
         });
         
+        // Sign up anyway button handler
+        signupAnywayBtn.addEventListener('click', function() {
+            showSection(signupSection);
+        });
+        
         // Initialize the page
         window.addEventListener('load', function() {
             if (id) {
@@ -454,9 +569,7 @@
                 checkIdAndRedirect();
             } else {
                 setLoading(false);
-                showMessage('No ID found in URL. Please sign up.', 'info');
-                statsSection.style.display = 'block';
-                visitCountSpan.textContent = 'N/A';
+                showMessage('No ID found in URL. Please sign up to get your QR Code.', 'info');
             }
         });
         
